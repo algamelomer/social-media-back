@@ -13,29 +13,43 @@ class PostController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $posts = Post::all();
-        $posts->each(function ($post) {
+        $perPage = $request->input('per_page', 10);
+
+        // Get the authenticated user
+        $user = $request->user();
+
+        // Fetch paginated posts with likes count
+        $posts = Post::withCount('likes')->paginate($perPage);
+
+        // Add additional fields to each post
+        $posts->getCollection()->each(function ($post) use ($user) {
+            // Add image URL
             $post->image_url = $post->getFirstMediaUrl('image_url');
+
+            // Check if the post is liked by the authenticated user
+            $post->is_liked = $user ? $post->likes()->where('user_id', $user->id)->exists() : false;
         });
 
-        $response = $posts;
-        $response->load('likes');
-        $response->load('shares');
-        $response->load('user');
+        // Load related data (likes, shares, user)
+        $posts->load('likes.user', 'shares', 'user');
 
-        if ($response->isEmpty()) {
+        // Check if there are any posts
+        if ($posts->isEmpty()) {
             return response()->json([
                 'status' => false,
                 'message' => 'No posts found'
             ], 404);
         }
+
+        // Return the paginated response
         return response()->json([
             'status' => true,
-            'data' => $response
+            'data' => $posts
         ], 200);
     }
+
 
     /**
      * Store a newly created resource in storage.
@@ -86,19 +100,22 @@ class PostController extends Controller
      */
     public function show(string $id)
     {
-        $response = Post::find($id);
+        // Fetch the post with likes count
+        $response = Post::withCount('likes')->find($id);
+
         if (!$response) {
             return response()->json([
                 'status' => false,
                 'message' => 'Post not found'
             ], 404);
         }
-        $response->load('likes');
-        $response->load('shares');
-        $response->load('user');
+
+        // Load related data (likes, shares, user)
+        $response->load('likes.user', 'shares', 'user');
+
         return response()->json([
             'status' => true,
-            $response
+            'data' => $response
         ], 200);
     }
 

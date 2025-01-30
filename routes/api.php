@@ -32,6 +32,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Like routes
     Route::post('/posts/{post}/like', [LikeController::class, 'like']);
     Route::delete('/posts/{post}/like', [LikeController::class, 'unlike']);
+    // Route::get('/posts/{id}/like', [LikeController::class, 'getLikesByPostsId']);
 
     // Share routes
     Route::post('/posts/{post}/share', [ShareController::class, 'share']);
@@ -41,5 +42,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/users/{user}/follow', [FollowerController::class, 'follow']);
     Route::delete('/users/{user}/follow', [FollowerController::class, 'unfollow']);
 
-    
+
 });

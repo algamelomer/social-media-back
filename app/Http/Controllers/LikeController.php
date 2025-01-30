@@ -18,8 +18,20 @@ class LikeController extends Controller
 
         $validator = Validator::make($request->all(), [
             'user_id' => 'required|integer|exists:users,id',
-            'post_id' => 'required|integer|exists:posts,id'
+            'post_id' => 'required|integer|exists:posts,id',
         ]);
+
+        // Ensure the user hasn't already liked the post
+        $existingLike = Like::where('user_id', $request->user()->id)
+            ->where('post_id', $id)
+            ->exists();
+
+        if ($existingLike) {
+            return response()->json([
+                'status' => false,
+                'message' => 'You have already liked this post.'
+            ], 400);
+        }
 
         if ($validator->fails()) {
             return response()->json([
@@ -30,6 +42,9 @@ class LikeController extends Controller
         }
 
         $like = Like::create($request->all());
+
+        // Load the user data
+        $like->load('user');
 
         return response()->json([
             'status' => true,
@@ -76,4 +91,15 @@ class LikeController extends Controller
             'message' => 'Like removed'
         ], 200);
     }
+
+    // public function getLikesByPostsId(string $id)
+    // {
+    //     $response = Like::where('post_id', $id);
+    //     $response->load('user');
+    //     return response()->json([
+    //         'status' => true,
+    //         'data' => $response
+    //     ], 200);
+    // }
+
 }
